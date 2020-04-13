@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+        <script src="/three.min.js"></script>
+        <script type="text/javascript" src="dat.gui.min.js"></script>
+  	</head>
+    <script id="fragShader" type="x-shader/x-fragment">
+	  uniform vec2 resolution;
+	  uniform sampler2D texture;
+	  uniform vec3 smokeSource;
+	  uniform vec3 colorA;
+
+      void main() {
+		vec2 pixel = gl_FragCoord.xy / resolution.xy;
+		gl_FragColor = texture2D( texture, pixel );
+
+		
+		float dist = distance(smokeSource.xy, gl_FragCoord.xy);
+		
+		/////////////////////////////////////////////////////
+		gl_FragColor.rgb +=  smokeSource.z * max(30.0-dist,0.0);
+
+		gl_FragColor.b -= gl_FragColor.b / 100.;
+		gl_FragColor.r -= gl_FragColor.r / 1000.;
+		gl_FragColor.g -= gl_FragColor.g / 10.;
+
+		//Smoke diffuse
+		float xPixel = 1.0/resolution.x;
+		float yPixel = 1.0/resolution.y;
+
+		vec4 rightColor = texture2D(texture,vec2(pixel.x+xPixel,pixel.y));
+		vec4 leftColor = texture2D(texture,vec2(pixel.x-xPixel,pixel.y));
+		vec4 upColor = texture2D(texture,vec2(pixel.x,pixel.y+yPixel));
+		vec4 downColor = texture2D(texture,vec2(pixel.x,pixel.y-yPixel));
+
+		if(pixel.y <= yPixel){
+			downColor = vec4(0.);
+		}
+
+		///////////////////////////////////////////////////////////////
+		float factor = 6.0 * 0.016 * (leftColor.r + rightColor.r + downColor.r * 3.0 + upColor.r - 6.0 * gl_FragColor.r);
+	 
+	
+		float minimum = 0.003;
+		if(factor >= -minimum && factor < 0.0) factor = -minimum;
+		gl_FragColor.rgb += factor;
+
+	 }
+    </script>
+	<style>
+		body { margin: 0; }
+		canvas { display: block; }
+	</style>
+	</head>
+	<body>
+     
+		<script src="/feedback.js"></script>
+	</body>
+</html>
