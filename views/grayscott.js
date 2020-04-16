@@ -1,7 +1,7 @@
 var guiData = {
-    "preset": "worms",
+    "preset": "cells",
     "remembered": {
-        "worms": {
+      "worms": {
         "0": {
             "color1": {
             "r": 89.07628676470587,
@@ -24,24 +24,167 @@ var guiData = {
             "k": 0.06,
             "flow": 1,
             "brushSize": 30,
-            "iterations": 4,
-            "timeStep":0.1,
+            "iterations": 1,
+            "timeStep":0.03,
+             "enableBrush":0,
             }
+        },
+        "cells": {
+            "0": {
+              "color1": {
+                "r": 1.5487132352941122,
+                "g": 1.5487132352941122,
+                "b": 2.499999999999991
+              },
+              "color2": {
+                "r": 220,
+                "g": 32.75735294117648,
+                "b": 32.75735294117648
+              },
+              "color3": {
+                "r": 67.87224264705884,
+                "g": 202.50000000000003,
+                "b": 67.87224264705884
+              },
+              "dA": 0.421,
+              "dB": 0.171,
+              "timeStep": 0.01,
+              "feed": 0.106,
+              "k": 0.055,
+              "flow": 1,
+              "brushSize": 30,
+              "iterations": 1
+            }
+        },
+        "fire": {
+            "0": {
+              "color1": {
+                "r": 130,
+                "g": 0,
+                "b": 0
+              },
+              "color2": {
+                "r": 220,
+                "g": 32.75735294117648,
+                "b": 32.75735294117648
+              },
+              "color3": {
+                "r": 66.10294117647057,
+                "g": 101.71349789915965,
+                "b": 120
+              },
+              "dA": 0.352,
+              "dB": 0.161,
+              "timeStep": 0.01,
+              "feed": 0.006,
+              "k": 0.037000000000000005,
+              "flow": 1,
+              "brushSize": 40.955361251725726,
+              "iterations": 10
         }
+    },
+    "viol":  {
+        "0": {
+          "color1": {
+            "r": 232.5,
+            "g": 232.5,
+            "b": 232.5
+          },
+          "color2": {
+            "r": 150,
+            "g": 119.39338235294117,
+            "b": 119.39338235294117
+          },
+          "color3": {
+            "r": 81.10782480727337,
+            "g": 61.233149509803916,
+            "b": 177.5
+          },
+          "dA": 0.128,
+          "dB": 0.096,
+          "timeStep": 0.0529,
+          "feed": 0.006,
+          "k": 0.0257,
+          "flow": 1,
+          "brushSize": 100,
+          "iterations": 3
+        }
+      },
+    "liv": {
+        "0": {
+          "color1": {
+            "r": 1.5487132352941122,
+            "g": 1.5487132352941122,
+            "b": 2.499999999999991
+          },
+          "color2": {
+            "r": 52.500000000000014,
+            "g": 30.978860294117656,
+            "b": 30.978860294117656
+          },
+          "color3": {
+            "r": 38.64583333333333,
+            "g": 135.37952196382432,
+            "b": 170.00000000000003
+          },
+          "dA": 0.215,
+          "dB": 0.182,
+          "timeStep": 0.005200000000000001,
+          "feed": 0.006,
+          "k": 0.0257,
+          "flow": 1,
+          "brushSize": 30,
+          "iterations": 1
+        }
+      },
+    "hip": {
+        "0": {
+          "color1": {
+            "r": 1.5487132352941122,
+            "g": 1.5487132352941122,
+            "b": 2.499999999999991
+          },
+          "color2": {
+            "r": 220,
+            "g": 32.75735294117648,
+            "b": 32.75735294117648
+          },
+          "color3": {
+            "r": 63.00000000000001,
+            "g": 169.29411764705875,
+            "b": 202
+          },
+          "dA": 0.388,
+          "dB": 0.161,
+          "timeStep": 0.01,
+          "feed": 0.006,
+          "k": 0.037000000000000005,
+          "flow": 1,
+          "brushSize": 30,
+          "iterations": 24
+        }
+      },
     }
 }
 
 
 function Brush(){
 	this.x = window.innerWidth;
-	this.y = window.innerHeight;
+    this.y = window.innerHeight;
+    this.enable = 0;
+    
 	this.isDown = false;
 
 	var vx = 0;
 	var vy = 0;
 	var mx = 0;
 	var my = 0;
-	var mouseIsDown = false;
+    var mouseIsDown = false;
+    
+    this.swap = function(){
+        this.enable = !this.enable;
+        console.log(this.enable)
+    }
 
 	this.update = function(){
         if (!mouseIsDown) {
@@ -91,7 +234,7 @@ function Brush(){
 	})
 }
 
-var scene, camera, renderer;
+var scene, camera, renderer, width,height,controls,dragControls;
 
 function setupMainScene()
 {
@@ -103,7 +246,10 @@ function setupMainScene()
   renderer = new THREE.WebGLRenderer();
   renderer.setSize( window.innerWidth, window.innerHeight );
   document.body.appendChild( renderer.domElement );
+  controls = new THREE.OrbitControls(camera, renderer.domElement);  
+  controls.enableRotate = false;
 }
+
 
 
 
@@ -111,14 +257,13 @@ var dA = .2;
 var dB = 0.2;
 var feed = 0.031;
 var k = 0.057;
-
 var brushSize = 1;
 var clear = 0;
 var iterations = 1;
 var flow = 1.00;
 var timeStep = 0.01;
-
 var brush = new Brush();
+
 
 var bufferScene, textureA,textureB, initText;
 function setupBufferScene() {
@@ -155,6 +300,7 @@ function initBufferScene(){
         k: {type:'f', value:k},
         brushSize: {type:'f', value:brushSize},
         clear: {type:'i', value:clear},
+        enableBrush: {type:'i', value: 0},
         flow: {type:'f', value:flow},
         diff1:  {type:'f', value: 0.2*flow},
         diff2:  {type:'f', value: 0.05*flow},
@@ -196,24 +342,26 @@ initBufferScene();
 initFinalScene();
 
 function clearScreen() { clear = 1; }
+function Brushable() { brush.swap(); }
 
 function addGuiControls(){
 
     var gui = new dat.GUI({load: guiData });
         gui.remember(this);
-
+       
         gui.addColor(this, "color1");
         gui.addColor(this, "color2");
         gui.addColor(this, "color3");
         gui.add(this, "dA", 0.0, 1.0).step(0.001);
         gui.add(this, "dB", 0.0, 1.0).step(0.001);
         gui.add(this, "timeStep", 0.0, 0.1).step(0.0001);
-        gui.add(this, "feed", 0.0, 0.1).step(0.0001);
-        gui.add(this, "k", 0.0, 0.1).step(0.0001);
+        gui.add(this, "feed", 0.0, 0.15).step(0.0001);
+        gui.add(this, "k", 0.0, 0.15).step(0.0001);
         gui.add(this, "flow", 1.0, 1.01);
         gui.add(this, "brushSize", 1, 100);
         gui.add(this, "iterations", 0, 100).step(1);
         gui.add(this, "clearScreen");
+        gui.add(this, "Brushable");
 
         gui.close();
 }
@@ -257,6 +405,7 @@ function render() {
     bufferMaterial.uniforms.k.value = k;
     bufferMaterial.uniforms.brushSize.value = brushSize;
     bufferMaterial.uniforms.clear.value = clear;
+    bufferMaterial.uniforms.enableBrush.value = brush.enable;
     bufferMaterial.uniforms.flow.value = flow;
 
     finalMaterial.uniforms.color1.value.r = color1.r/255;

@@ -68,6 +68,7 @@
     uniform float flow;
 
     uniform int clear;
+    uniform bool enableBrush;
 
     uniform float diff1;
     uniform float diff2;
@@ -77,7 +78,7 @@
     void main() 
     {
         // load current values for a and b
-        if (time < 2.0 || clear == 1) {
+        if ( clear == 1) {
             gl_FragColor = texture2D(start, gl_FragCoord.xy / res.xy);
             return;
         }
@@ -85,12 +86,14 @@
         float a = currentColor.r;
         float b = currentColor.g;
 
-        //Get the distance of the current pixel from the brush
-        float dist = distance(brush.xy, gl_FragCoord.xy);
-        if (dist < brushSize)  {
-            float ratio = 1.0 - dist/brushSize;
-            b += 0.5 * ratio * brush.z;
+        if (enableBrush){
+            float dist = distance(brush.xy, gl_FragCoord.xy);
+            if (dist < brushSize)  {
+                float ratio = 1.0 - dist/brushSize;
+                b += 0.5 * ratio * brush.z;
+            }
         }
+       
 
         if (clear == 1) {
             a = 1.0;
@@ -149,7 +152,6 @@
     }
 
   </script>
-  <script src="presets.js"></script>
   <script type="text/javascript" src="grayscott.js"></script>
   <meta charset="UTF-8">
   <style>
