@@ -1,114 +1,122 @@
-
-var gui = new dat.GUI();
-///////////////////////////////////////////////////////////////
 var w = window.innerWidth;
 var h = window.innerHeight;
-//Set up controlls
+
 var guiData = {
-    colorA : [ 30, 38, 48 ],
-    colorB : [ 251, 53, 80 ],
-};
+    "preset": "default",
+    "remembered": {
+        "default": {
+        "0": {
+            "colorA": {
+            "r": 89.07628676470587,
+            "g": 177.5,
+            "b": 111.43630620351591
+            },
+            "colorB": {
+            "r": 192.5,
+            "g": 51.30974264705883,
+            "b": 96.72758766968325
+            },
+            "sizeBrush": 10.
+            }
+        }
+    }
+}
 
-gui.addColor(guiData,'colorA');
-gui.addColor(guiData,'colorB');
+var gui, colorA, colorB, siezeBrush;  
+colorA= new THREE.Color(255, 255, 0);
+colorB= new THREE.Color(255, 0, 0);
+sizeBrush = 10.;
 
-// gui.addColor(guiData,'valX');
-// gui.addColor(guiData,'valY');
+function addGuiControls(){
+       
+        gui = new dat.GUI({load: guiData });
+        gui.remember(this);
 
-var colorA = new THREE.Vector3( guiData.colorA[ 0 ] / 255, guiData.colorA[ 1 ] / 255, guiData.colorA[ 2 ] / 255 );
-var colorB = new THREE.Vector3( guiData.colorB[ 0 ] / 255, guiData.colorB[ 1 ] / 255, guiData.colorB[ 2 ] / 255 );
-
-///////////////////////////////////////////////////////////////
-// Set up camera, renderer and scene
-camera = new THREE.Camera();
+        gui.addColor(this,"colorA");
+        gui.addColor(this,"colorB"); 
+        gui.add(this, "sizeBrush",10.,100.).step(1.);  
+}
 
 
-var renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true } );
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor( 0x665544, 1 );
-document.body.appendChild( renderer.domElement );
+var camera,renderer,scene;
+function setupMainScene(){
+    camera = new THREE.Camera();
+    renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true } );
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor( 0x665544, 1 );
+    document.body.appendChild( renderer.domElement );
+    scene = new THREE.Scene();
+}
 
-//Render scene
-var scene = new THREE.Scene();
 
-///////////////////////////////////////////////////////////////
-//Set up render shader  uniforms
-uniforms = {
-    resolution : { type : 'v2', value : new THREE.Vector2( w, h ) },
-    colorA : { type : 'v3', value : colorA },
-    colorB : { type : 'v3', value : colorB },
 
+var bufferScene ,ping ,pong, renderTargetParams; 
+function setupBufferScene(){
+    bufferScene = new THREE.Scene();
+    renderTargetParams = {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.NearestFilter,
+        format: THREE.RGBAFormat,
+        type: THREE.FloatType
+    };
+    
+    ping = new THREE.WebGLRenderTarget( w, h, renderTargetParams );
+    pong = new THREE.WebGLRenderTarget( w, h, renderTargetParams );
+    
+}
+
+var bufferUniforms, bufferMaterial, plane, bufferObject;
+function initBufferScene(){
+    bufferUniforms = {
+        texture: { type : 't', value : pong.texture },
+        resolution : { type : 'v2', value : new THREE.Vector2( w, h ) },
+        smokeSource: {type:"v3",value:new THREE.Vector3(0,0,0)},
+        sizeBrush: {type:'f', value: 10. },
+        colorA : { type : 'c', value : colorA },
+        colorB : { type : 'c', value : colorB}
+    };
+    
+    bufferMaterial = new THREE.ShaderMaterial({
+        uniforms : bufferUniforms,
+        fragmentShader : document.getElementById( 'fragShader' ).textContent
+    });
+    
+    plane = new THREE.PlaneBufferGeometry( 2, 2 );
+    bufferObject = new THREE.Mesh( plane, bufferMaterial );
+    bufferScene.add(bufferObject);
+}
+
+var finalMaterial,quad;
+function initMainScene(){
+    finalMaterial =  new THREE.MeshBasicMaterial({map: ping});
+    quad = new THREE.Mesh( plane, finalMaterial );
+    scene.add(quad);
+}
+
+function setSmokeMouse(){
+    var mouseDown = false;
+    function UpdateMousePosition(X,Y){
+        var mouseX = X;
+          var mouseY = h - Y;
+          bufferMaterial.uniforms.smokeSource.value.x = mouseX;
+          bufferMaterial.uniforms.smokeSource.value.y = mouseY;
+    }
+    document.onmousemove = function(event){
+          UpdateMousePosition(event.clientX,event.clientY)
     }
     
-var material = new THREE.ShaderMaterial( {
-    uniforms: uniforms,
-    fragmentShader: document.getElementById( 'fragShader' ).textContent
-});
-
-///////////////////////////////////////////////////////////////
-//Set up bufferScene and textures 
-
-var bufferScene
-    ,ping 
-    ,pong; 
-
-bufferScene = new THREE.Scene();
-var renderTargetParams = {
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.NearestFilter,
-    format: THREE.RGBAFormat,
-    type: THREE.FloatType
-};
-    
-ping = new THREE.WebGLRenderTarget( w, h, renderTargetParams );
-pong = new THREE.WebGLRenderTarget( w, h, renderTargetParams );
-
-bufferUniforms = {
-    texture: { type : 't', value : pong.texture },
-    resolution : { type : 'v2', value : new THREE.Vector2( w, h ) },
-    smokeSource: {type:"v3",value:new THREE.Vector3(0,0,0)}
-};
-
-var bufferMaterial = new THREE.ShaderMaterial({
-    uniforms : bufferUniforms,
-    fragmentShader : document.getElementById( 'fragShader' ).textContent
-    });
-
-var plane = new THREE.PlaneBufferGeometry( 2, 2 );
-var bufferObject = new THREE.Mesh( plane, bufferMaterial );
-bufferScene.add(bufferObject);
-
-
-//Send position of smoke source with value
-var mouseDown = false;
-function UpdateMousePosition(X,Y){
-    var mouseX = X;
-      var mouseY = h - Y;
-      bufferMaterial.uniforms.smokeSource.value.x = mouseX;
-      bufferMaterial.uniforms.smokeSource.value.y = mouseY;
+    document.onmousedown = function(event){
+        mouseDown = true;
+        bufferMaterial.uniforms.smokeSource.value.z = 0.01;
+    }
+    document.onmouseup = function(event){
+        mouseDown = false;
+        bufferMaterial.uniforms.smokeSource.value.z = 0;
+    }
 }
-document.onmousemove = function(event){
-      UpdateMousePosition(event.clientX,event.clientY)
-}
-
-document.onmousedown = function(event){
-    mouseDown = true;
-    bufferMaterial.uniforms.smokeSource.value.z = 0.01;
-}
-document.onmouseup = function(event){
-    mouseDown = false;
-    bufferMaterial.uniforms.smokeSource.value.z = 0;
-}
-
-//Draw ping to screen
-var finalMaterial;
-finalMaterial =  new THREE.MeshBasicMaterial({map: ping});
-quad = new THREE.Mesh( plane, finalMaterial );
-scene.add(quad);
-
+setSmokeMouse();
 
 function render() {
-
     requestAnimationFrame( render );
     //Draw ping to buffer
     renderer.setRenderTarget(ping);
@@ -125,9 +133,26 @@ function render() {
     //Update uniforms
     quad.material.map = ping;
     bufferMaterial.uniforms.texture.value=pong;
+    bufferMaterial.uniforms.sizeBrush.value=sizeBrush;
+
+    bufferMaterial.uniforms.colorA.value.r = colorA.r/255;
+    bufferMaterial.uniforms.colorA.value.g = colorA.g/255;
+    bufferMaterial.uniforms.colorA.value.b = colorA.b/255;
+
+    bufferMaterial.uniforms.colorB.value.r = colorB.r/255;
+    bufferMaterial.uniforms.colorB.value.g = colorB.g/255;
+    bufferMaterial.uniforms.colorB.value.b = colorB.b/255;
+
 
     //Draw to screen
     renderer.render( scene, camera );
-    }
+ }
+
+
+setupMainScene();
+setupBufferScene();
+initBufferScene();
+initMainScene();
     
+addGuiControls();
 render();

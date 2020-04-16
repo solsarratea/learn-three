@@ -1,18 +1,23 @@
   var width = window.innerWidth;
   var height = window.innerHeight;
 
-  var camera = new THREE.PerspectiveCamera(45, width / height, 0.01, 1000);
-  camera.position.y = 0;
-  camera.position.z = 10;
+var camera,scene,geometry;
+function setupScene(){
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.01, 1000);
+    camera.position.y = 0;
+    camera.position.z = 10;
+  
+  
+   renderer = new THREE.WebGLRenderer();
+   renderer.setSize( window.innerWidth, window.innerHeight );
+   document.body.appendChild( renderer.domElement );
+  
+   scene = new THREE.Scene();
+  }
 
-
-  var renderer = new THREE.WebGLRenderer();
-  renderer.setSize( window.innerWidth, window.innerHeight );
-  document.body.appendChild( renderer.domElement );
-
-  var scene = new THREE.Scene();
-  var geometry = new THREE.PlaneBufferGeometry( 7, 4, 2,2);
-
+var geometry, material, uniforms,plane;
+function initScene(){
+  geometry = new THREE.PlaneBufferGeometry( 7, 4, 2,2);
   material = new THREE.ShaderMaterial( {
   uniforms: {
       "time": { value: 0.0 }
@@ -21,30 +26,27 @@
     vertexShader: document.getElementById( 'vertexShader' ).textContent
 
   } );
-
- 
-
-
-  var plane = new THREE.Mesh( geometry, material );
-  scene.add( plane );
-
-
+  plane = new THREE.Mesh( geometry, material );
   plane.rotation.x = -1.2 ;
+  scene.add( plane );
+}
+ 
+function onWindowResize() {
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+}
 
-  function onWindowResize() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    }
+var time;
+function animate() {
+  renderer.render(scene, camera);
 
-  function animate() {
-      renderer.render(scene, camera);
+  var time = performance.now() * 0.005;
+  material.uniforms[ "time" ].value = time;
+} 
 
-      var time = performance.now() * 0.005;
-      material.uniforms[ "time" ].value = time;
-    } 
+window.addEventListener('resize', onWindowResize, false);
 
-  window.addEventListener('resize', onWindowResize, false);
-  animate();
+setupScene();
+initScene();
+animate();

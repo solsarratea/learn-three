@@ -11,6 +11,8 @@
 	  uniform sampler2D texture;
 	  uniform vec3 smokeSource;
 	  uniform vec3 colorA;
+	  uniform vec3 colorB;
+	  uniform float sizeBrush;
 
       void main() {
 		vec2 pixel = gl_FragCoord.xy / resolution.xy;
@@ -20,11 +22,14 @@
 		float dist = distance(smokeSource.xy, gl_FragCoord.xy);
 		
 		/////////////////////////////////////////////////////
-		gl_FragColor.rgb +=  smokeSource.z * max(30.0-dist,0.0);
+		gl_FragColor.rgb +=  smokeSource.z *0.5* max(sizeBrush-dist,0.0) * colorA;
 
-		gl_FragColor.b -= gl_FragColor.b / 100.;
-		gl_FragColor.r -= gl_FragColor.r / 1000.;
-		gl_FragColor.g -= gl_FragColor.g / 10.;
+		gl_FragColor.b -= smokeSource.z *gl_FragColor.b / 200. *colorA.r;
+		gl_FragColor.r -= smokeSource.z *gl_FragColor.r / 200. *colorA.g;
+		gl_FragColor.g -= smokeSource.z *gl_FragColor.g / 200. *colorA.b;
+
+		gl_FragColor.rgb += smokeSource.z *0.5* max(sizeBrush-dist,0.0)* colorB;
+
 
 		//Smoke diffuse
 		float xPixel = 1.0/resolution.x;
@@ -40,12 +45,14 @@
 		}
 
 		///////////////////////////////////////////////////////////////
-		float factor = 6.0 * 0.016 * (leftColor.r + rightColor.r + downColor.r * 3.0 + upColor.r - 6.0 * gl_FragColor.r);
+		float factor = 7.0 * 0.016 * (leftColor.r + rightColor.r + downColor.r * 3.0 + upColor.r - 6.0 * gl_FragColor.r);
 	 
 	
 		float minimum = 0.003;
 		if(factor >= -minimum && factor < 0.0) factor = -minimum;
 		gl_FragColor.rgb += factor;
+		
+
 
 	 }
     </script>
