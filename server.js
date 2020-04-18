@@ -23,11 +23,14 @@ app.get("/feedback", (request, response) => {
   response.sendFile(__dirname + "/views/feedback.html");
 });
 
-
 app.get("/grayscott", (request, response) => {
   response.sendFile(__dirname + "/views/grayscott.html");
 });
 
 app.get("/torus", (request, response) => {
   response.sendFile(__dirname + "/views/torus.html");
+});
+
+app.get("/gsvideo", (request, response) => {
+  response.sendFile(__dirname + "/views/gs-video.html");
 });
